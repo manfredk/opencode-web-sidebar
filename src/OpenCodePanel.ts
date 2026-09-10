@@ -684,7 +684,17 @@ export class OpenCodePanel implements vscode.WebviewViewProvider {
     this.updateStatusBar();
 
     try {
-      this.safeSendStateUpdate({ reloadIframe: reloadIframe && state === 'connected' });
+      if (reloadIframe && state === 'connected') {
+        // Reassigning iframe.src is not sufficient when VS Code has discarded
+        // the iframe's renderer. In that state the outer webview can still
+        // receive messages and show "Connected", while the frame never paints
+        // again. Rebuilding the outer document creates a fresh iframe renderer
+        // and does not depend on a postMessage reaching the stale document.
+        this._iframeNeedsNavigation = false;
+        this.render();
+      } else {
+        this.safeSendStateUpdate();
+      }
     } catch (err) {
       this.log(`Failed to update webview after recheck: ${err}`);
     }
