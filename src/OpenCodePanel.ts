@@ -1240,7 +1240,9 @@ export class OpenCodePanel implements vscode.WebviewViewProvider {
       }
       return 'connected';
     } catch (err) {
-      this.log(`Health check failed: ${err}`);
+      // undici wraps the real network error (ECONNREFUSED, ENOTFOUND, ...) in err.cause
+      const cause = (err as { cause?: unknown })?.cause;
+      this.log(`Health check failed (${url}): ${err}${cause ? ` — cause: ${cause}` : ''}`);
       return 'disconnected';
     }
   }
